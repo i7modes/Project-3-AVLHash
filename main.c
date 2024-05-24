@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define TABLE_SIZE 311
+#define R 307
 
 typedef struct AVLnode *AVLNode;
 
@@ -26,6 +27,7 @@ struct hashTable
 int currentTableSize = 0; // current size of the hash table
 
 int isStringContainOnlyLetters(char *);
+char toLowerCase(char);
 
 AVLNode MakeEmpty(AVLNode);
 AVLNode Find(char *, AVLNode);
@@ -59,6 +61,7 @@ int main()
 
     FILE *input;
 
+    int isLoaded = 0;
     int IsAvlCreated = 0;
     int IsHashTableCreated = 0;
 
@@ -91,55 +94,72 @@ int main()
 
         case 1:
 
-            input = fopen("input.txt", "r");
-
-            if (input == NULL)
+            if (isLoaded == 1)
             {
-                printf("\nUnable to read the text from the file!\n\n");
-                exit(1);
+                printf("\nYou have already loaded the text\n\n");
             }
             else
             {
-                while (fgets(tempText, sizeof(tempText), input))
+
+                input = fopen("input.txt", "r");
+
+                if (input == NULL)
                 {
-                    for (int i = 0; i < strlen(tempText); i++)
+                    printf("\nUnable to read the text from the file!\n\n");
+                    exit(1);
+                }
+                else
+                {
+                    while (fgets(tempText, sizeof(tempText), input))
                     {
-                        if (((tempText[i] >= 'A' && tempText[i] <= 'Z') || (tempText[i] >= 'a' && tempText[i] <= 'z') || tempText[i] == ' '))
+                        for (int i = 0; i < strlen(tempText); i++)
                         {
-                            strncat(inputText, &tempText[i], 1);
+                            if (((tempText[i] >= 'A' && tempText[i] <= 'Z') || (tempText[i] >= 'a' && tempText[i] <= 'z') || tempText[i] == ' '))
+                            {
+                                strncat(inputText, &tempText[i], 1);
+                            }
+                        }
+                        if (!(inputText[strlen(inputText) - 1] == ' '))
+                        {
+                            strcat(inputText, " ");
                         }
                     }
-                    if (!(inputText[strlen(inputText) - 1] == ' '))
-                    {
-                        strcat(inputText, " ");
-                    }
+                    printf("\nThe Text has been loaded successfully\n");
+                    printf("The input Text: %s\n\n", inputText);
+                    isLoaded = 1;
+                    fclose(input);
                 }
-                printf("\nThe Text has been loaded successfully\n");
-                printf("The input Text: %s\n\n", inputText);
-                fclose(input);
             }
 
             break;
 
         case 2:
 
-            if (IsAvlCreated == 0)
+            if (inputText[0] == '\0')
             {
-                myAvlTree = MakeEmpty(myAvlTree);
-
-                char *token = strtok(inputText, " ");
-                while (token != NULL)
-                {
-                    myAvlTree = Insert(token, myAvlTree);
-                    token = strtok(NULL, " ");
-                }
-
-                printf("\nThe AVL Tree has been created successfully\n\n");
-                IsAvlCreated = 1;
+                printf("\nYou have to load the text first\n\n");
             }
             else
             {
-                printf("\nYou have already created one\n\n");
+
+                if (IsAvlCreated == 0)
+                {
+                    myAvlTree = MakeEmpty(myAvlTree);
+
+                    char *token = strtok(inputText, " ");
+                    while (token != NULL)
+                    {
+                        myAvlTree = Insert(token, myAvlTree);
+                        token = strtok(NULL, " ");
+                    }
+
+                    printf("\nThe AVL Tree has been created successfully\n\n");
+                    IsAvlCreated = 1;
+                }
+                else
+                {
+                    printf("\nYou have already created one\n\n");
+                }
             }
             break;
 
@@ -175,7 +195,6 @@ int main()
                 if (isStringContainOnlyLetters(tempText) == 1)
                 {
                     myAvlTree = Delete(tempText, myAvlTree);
-                    printf("\nThe word have been deleted successfully\n\n");
                 }
                 else
                 {
@@ -340,12 +359,22 @@ int isStringContainOnlyLetters(char *string)
 {
     for (int i = 0; i < strlen(string); i++)
     {
-        if (!isalpha(string[i]))
+        if (!((string[i] >= 'A' && string[i] <= 'Z') || (string[i] >= 'a' && string[i] <= 'z')))
         {
             return 0;
         }
     }
     return 1;
+}
+
+char toLowerCase(char letter)
+{
+    if (letter >= 'A' && letter <= 'Z')
+    {
+        letter = (char)(letter + 32);
+    }
+
+    return letter;
 }
 
 //==========================================================[AVL Trees Methods]=========================================================
@@ -505,84 +534,90 @@ AVLNode Delete(char *Word, AVLNode T)
 {
     if (T == NULL)
     {
-        printf("Element not found\n");
+
+        printf("\nThe word you entered not found\n\n");
         return NULL;
     }
 
     if (strcasecmp(Word, T->Word) < 0)
     {
         T->Left = Delete(Word, T->Left);
+
+        if (Height(T->Left) - Height(T->Right) == 2)
+        {
+            if (strcasecmp(Word, T->Left->Word) < 0)
+            {
+                T = SingleRotateWithLeft(T);
+            }
+            else
+            {
+                T = DoubleRotateWithLeft(T);
+            }
+        }
     }
     else if (strcasecmp(Word, T->Word) > 0)
     {
         T->Right = Delete(Word, T->Right);
+
+        if (Height(T->Right) - Height(T->Left) == 2)
+        {
+            if (strcasecmp(Word, T->Right->Word) > 0)
+            {
+                T = SingleRotateWithRight(T);
+            }
+            else
+            {
+                T = DoubleRotateWithRight(T);
+            }
+        }
     }
     else
     {
-        if ((T->Left == NULL) || (T->Right == NULL))
+        AVLNode temp;
+        if (T->Left && T->Right)
         {
-            // Node with only one child or zero child
-            AVLNode temp = T->Left ? T->Left : T->Right;
+            // Two children
+            // Replace with smallest in right subtree
+            temp = FindMin(T->Right);
+            strcpy(T->Word, temp->Word);
+            T->Frequency = temp->Frequency;
+            T->Right = Delete(temp->Word, T->Right);
 
-            // No child case
-            if (temp == NULL)
+            if (Height(T->Right) - Height(T->Left) == 2)
             {
-                temp = T;
-                T = NULL;
+                if (strcasecmp(Word, T->Right->Word) > 0)
+                {
+                    T = SingleRotateWithRight(T);
+                }
+                else
+                {
+                    T = DoubleRotateWithRight(T);
+                }
             }
-            else            // One child case
-                *T = *temp; // Copy the contents of the non-empty child
-
-            free(temp);
         }
         else
         {
-            // Node with two children: Get the inorder successor (smallest
-            // in the right subtree)
-            AVLNode temp = FindMin(T->Right);
-
-            // Copy the inorder successor's data to this node
-            strcpy(T->Word, temp->Word);
-            T->Frequency = temp->Frequency;
-
-            // Delete the inorder successor
-            T->Right = Delete(temp->Word, T->Right);
+            // One or zero children
+            temp = T;
+            if (T->Left == NULL)
+            {
+                T = T->Right;
+            }
+            else if (T->Right == NULL)
+            {
+                T = T->Left;
+            }
+            free(temp);
+            printf("\nThe word have been deleted successfully\n\n");
         }
     }
 
-    // If the tree had only one node then return
     if (T == NULL)
+    {
         return T;
+    }
 
-    // Step 2: Update the height of the current node
     T->Height = Max(Height(T->Left), Height(T->Right)) + 1;
-
-    // Step 3: Get the balance factor of this node to check whether
-    // this node became unbalanced
-    int balance = Height(T->Left) - Height(T->Right);
-
-    // Left Left Case
-    if (balance > 1 && Height(T->Left->Left) >= Height(T->Left->Right))
-        return SingleRotateWithLeft(T);
-
-    // Left Right Case
-    if (balance > 1 && Height(T->Left->Left) < Height(T->Left->Right))
-    {
-        T->Left = SingleRotateWithRight(T->Left);
-        return SingleRotateWithLeft(T);
-    }
-
-    // Right Right Case
-    if (balance < -1 && Height(T->Right->Right) >= Height(T->Right->Left))
-        return SingleRotateWithRight(T);
-
-    // Right Left Case
-    if (balance < -1 && Height(T->Right->Right) < Height(T->Right->Left))
-    {
-        T->Right = SingleRotateWithLeft(T->Right);
-        return SingleRotateWithRight(T);
-    }
-
     return T;
 }
 
@@ -591,7 +626,7 @@ void PrintInOrder(AVLNode T)
     if (T != NULL)
     {
         PrintInOrder(T->Left);
-        printf("%s - %d\n", T->Word, T->Frequency);
+        printf(" - Word: %s - Frequency: %d\n", T->Word, T->Frequency);
         PrintInOrder(T->Right);
     }
 }
@@ -613,7 +648,7 @@ int hashFunction(char *Word, int TableSize)
 
     while (*Word != '\0')
     {
-        hashValue = (hashValue << 5) + *Word++;
+        hashValue = (hashValue << 5) + toLowerCase(*Word++);
     }
 
     return (hashValue % TableSize);
@@ -622,8 +657,8 @@ int hashFunction(char *Word, int TableSize)
 void hashInsert(hashTableP hashTable, char *Word, int TableSize)
 {
 
-    int tempIndex = hashFunction(Word, TableSize);
-    int index = tempIndex;
+    int firstCaseIndex = hashFunction(Word, TableSize);
+    int index = firstCaseIndex;
     int i = 1;
 
     if (currentTableSize == TableSize)
@@ -640,9 +675,9 @@ void hashInsert(hashTableP hashTable, char *Word, int TableSize)
             return;
         }
 
-        index = ((tempIndex + (i * (307 - (tempIndex % 307)))) % TableSize);
+        index = ((firstCaseIndex + (i * (R - (firstCaseIndex % R)))) % TableSize);
 
-        if (index == tempIndex)
+        if (index == firstCaseIndex)
         {
             printf("\nHash Table is full!!\n\n");
             return;
@@ -669,11 +704,11 @@ void hashDisplay(hashTableP hashTable, int TableSize)
         }
         else if (hashTable[i].status == -1)
         {
-            printf("%d. DELETED\n", i);
+            printf("%d. Deleted\n", i);
         }
         else
         {
-            printf("%d. EMPTY\n", i);
+            printf("%d. Empty\n", i);
         }
     }
 }
@@ -681,8 +716,8 @@ void hashDisplay(hashTableP hashTable, int TableSize)
 int hashSearch(hashTableP hashTable, char *Word, int TableSize)
 {
 
-    int tempIndex = hashFunction(Word, TableSize);
-    int index = tempIndex;
+    int firstCaseIndex = hashFunction(Word, TableSize);
+    int index = firstCaseIndex;
     int i = 1;
 
     if (currentTableSize == 0)
@@ -697,7 +732,7 @@ int hashSearch(hashTableP hashTable, char *Word, int TableSize)
             return index;
         }
 
-        index = ((tempIndex + (i * (307 - (tempIndex % 307)))) % TableSize);
+        index = ((firstCaseIndex + (i * (R - (firstCaseIndex % R)))) % TableSize);
 
         if (index == TableSize)
         {
@@ -734,8 +769,8 @@ void hashDelete(hashTableP hashTable, char *Word, int TableSize)
 void hashInsertWithFrequency(hashTableP hashTable, char *Word, int Frequency, int TableSize)
 {
 
-    int tempIndex = hashFunction(Word, TableSize);
-    int index = tempIndex;
+    int firstCaseIndex = hashFunction(Word, TableSize);
+    int index = firstCaseIndex;
     int i = 1;
 
     if (currentTableSize == TableSize)
@@ -752,9 +787,9 @@ void hashInsertWithFrequency(hashTableP hashTable, char *Word, int Frequency, in
             return;
         }
 
-        index = ((tempIndex + (i * (307 - (tempIndex % 307)))) % TableSize);
+        index = ((firstCaseIndex + (i * (R - (firstCaseIndex % R)))) % TableSize);
 
-        if (index == tempIndex)
+        if (index == firstCaseIndex)
         {
             printf("\nHash Table is full!!\n\n");
             return;
@@ -785,6 +820,7 @@ void displayStatistics(hashTableP hashTable, int TableSize)
     char mostFrequent[50];
     int mostFrequency = 0;
     int threshold;
+    int counter = 0;
     printf("Please enter the threshold: ");
     int isInteger = scanf("%d", &threshold);
 
@@ -804,13 +840,15 @@ void displayStatistics(hashTableP hashTable, int TableSize)
                 }
                 if (hashTable[i].Frequency > threshold)
                 {
+                    counter++;
                     printf(" - Word: %s | Frequency: %d\n", hashTable[i].Word, hashTable[i].Frequency);
                 }
-                else if (i = TableSize - 1)
-                {
-                    printf(" - No Words\n");
-                }
             }
+        }
+
+        if (counter == 0)
+        {
+            printf(" - No Words\n");
         }
 
         printf("\nThe total number of unique words: %d\n", uniqueWords);
