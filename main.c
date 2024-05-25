@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define TABLE_SIZE 311
-#define R 307
+#define TABLE_SIZE 211
+#define R 199
 
 typedef struct AVLnode *AVLNode;
 
@@ -12,7 +12,7 @@ struct AVLnode
     int Frequency;
     AVLNode Left;
     AVLNode Right;
-    int Height; // Balance information
+    int Height;
 };
 
 typedef struct hashTable *hashTableP;
@@ -21,10 +21,10 @@ struct hashTable
 {
     char Word[50];
     int Frequency;
-    int status; // Empty -> 0, Occupied -> 1, Deleted -> -1
+    int Status; // Empty -> 0, Occupied -> 1, Deleted -> -1
 };
 
-int currentTableSize = 0; // current size of the hash table
+int currentTableSize = 0;
 
 int isStringContainOnlyLetters(char *);
 char toLowerCase(char);
@@ -33,7 +33,7 @@ AVLNode MakeEmpty(AVLNode);
 AVLNode Find(char *, AVLNode);
 AVLNode FindMin(AVLNode);
 AVLNode FindMax(AVLNode);
-int Height(AVLNode P);
+int Height(AVLNode);
 int Max(int, int);
 AVLNode SingleRotateWithLeft(AVLNode);
 AVLNode SingleRotateWithRight(AVLNode);
@@ -55,15 +55,14 @@ void displayStatistics(hashTableP, int);
 
 int main()
 {
-
     AVLNode myAvlTree = NULL;
     hashTableP myTable;
 
     FILE *input;
 
     int isLoaded = 0;
-    int IsAvlCreated = 0;
-    int IsHashTableCreated = 0;
+    int isAvlCreated = 0;
+    int isHashTableCreated = 0;
 
     char tempText[200];
     char inputText[1000] = "";
@@ -72,7 +71,6 @@ int main()
 
     do
     {
-
         printf("Please Select one of the option you want:\n");
         printf("1. Load data from the file\n");
         printf("2. Create the AVL tree\n");
@@ -100,7 +98,6 @@ int main()
             }
             else
             {
-
                 input = fopen("input.txt", "r");
 
                 if (input == NULL)
@@ -130,7 +127,6 @@ int main()
                     fclose(input);
                 }
             }
-
             break;
 
         case 2:
@@ -141,8 +137,7 @@ int main()
             }
             else
             {
-
-                if (IsAvlCreated == 0)
+                if (isAvlCreated == 0)
                 {
                     myAvlTree = MakeEmpty(myAvlTree);
 
@@ -154,7 +149,7 @@ int main()
                     }
 
                     printf("\nThe AVL Tree has been created successfully\n\n");
-                    IsAvlCreated = 1;
+                    isAvlCreated = 1;
                 }
                 else
                 {
@@ -165,7 +160,7 @@ int main()
 
         case 3:
 
-            if (IsAvlCreated == 1)
+            if (isAvlCreated == 1)
             {
                 printf("Please Enter your word: ");
                 scanf("%s", tempText);
@@ -188,9 +183,9 @@ int main()
 
         case 4:
 
-            if (IsAvlCreated == 1)
+            if (isAvlCreated == 1)
             {
-                printf("Please Enter your word: ");
+                printf("Please Enter tour word: ");
                 scanf("%s", tempText);
                 if (isStringContainOnlyLetters(tempText) == 1)
                 {
@@ -210,9 +205,9 @@ int main()
 
         case 5:
 
-            if (IsAvlCreated == 1)
+            if (isAvlCreated == 1)
             {
-                printf("\nTree (inOrder):\n");
+                printf("Tree (inOrder):\n");
                 PrintInOrder(myAvlTree);
                 printf("\n");
             }
@@ -220,22 +215,26 @@ int main()
             {
                 printf("\nYou have to create the AVL Tree first\n\n");
             }
-
             break;
 
         case 6:
 
-            if (IsAvlCreated == 1)
+            if (isAvlCreated == 1)
             {
-                if (IsHashTableCreated == 0)
+                if (isHashTableCreated == 0)
                 {
                     myTable = (struct hashTable *)malloc(sizeof(struct hashTable) * TABLE_SIZE);
-                    hashInitialize(myTable, TABLE_SIZE);
 
+                    if (myTable == NULL)
+                    {
+                        printf("\nOut of memory\n\n");
+                        exit(1);
+                    }
+
+                    hashInitialize(myTable, TABLE_SIZE);
                     insertInOrder(myAvlTree, myTable, TABLE_SIZE);
                     // hashDisplay(myTable, TABLE_SIZE);
-
-                    IsHashTableCreated = 1;
+                    isHashTableCreated = 1;
                     printf("\nThe hash table has been created successfully\n\n");
                 }
                 else
@@ -251,7 +250,7 @@ int main()
 
         case 7:
 
-            if (IsHashTableCreated == 1)
+            if (isHashTableCreated == 1)
             {
                 printf("Please Enter your word: ");
                 scanf("%s", tempText);
@@ -273,7 +272,7 @@ int main()
 
         case 8:
 
-            if (IsHashTableCreated == 1)
+            if (isHashTableCreated == 1)
             {
                 printf("Please Enter your word: ");
                 scanf("%s", tempText);
@@ -295,7 +294,7 @@ int main()
 
         case 9:
 
-            if (IsHashTableCreated == 1)
+            if (isHashTableCreated == 1)
             {
                 printf("Please Enter your word: ");
                 scanf("%s", tempText);
@@ -312,7 +311,7 @@ int main()
                     }
                     else
                     {
-                        printf("\nWord = %s | Frequency = %d \n\n", myTable[index].Word, myTable[index].Frequency);
+                        printf("\nWord: %s | Frequency: %d\n\n", myTable[index].Word, myTable[index].Frequency);
                     }
                 }
                 else
@@ -329,7 +328,7 @@ int main()
 
         case 10:
 
-            if (IsHashTableCreated == 1)
+            if (isHashTableCreated == 1)
             {
                 displayStatistics(myTable, TABLE_SIZE);
             }
@@ -353,8 +352,6 @@ int main()
     return 0;
 }
 
-//==========================================================[Other Methods]=========================================================
-
 int isStringContainOnlyLetters(char *string)
 {
     for (int i = 0; i < strlen(string); i++)
@@ -376,8 +373,6 @@ char toLowerCase(char letter)
 
     return letter;
 }
-
-//==========================================================[AVL Trees Methods]=========================================================
 
 AVLNode MakeEmpty(AVLNode T)
 {
@@ -421,12 +416,12 @@ AVLNode FindMax(AVLNode T)
     return T;
 }
 
-int Height(AVLNode P)
+int Height(AVLNode T)
 {
-    if (P == NULL)
+    if (T == NULL)
         return -1;
     else
-        return P->Height;
+        return T->Height;
 }
 
 int Max(int Lhs, int Rhs)
@@ -437,13 +432,12 @@ int Max(int Lhs, int Rhs)
 AVLNode SingleRotateWithLeft(AVLNode K2)
 {
     AVLNode K1;
-
     K1 = K2->Left;
     K2->Left = K1->Right;
     K1->Right = K2;
 
     K2->Height = Max(Height(K2->Left), Height(K2->Right)) + 1;
-    K1->Height = Max(Height(K1->Left), K2->Height) + 1;
+    K1->Height = Max(Height(K2->Left), K2->Height) + 1;
 
     return K1;
 }
@@ -451,7 +445,6 @@ AVLNode SingleRotateWithLeft(AVLNode K2)
 AVLNode SingleRotateWithRight(AVLNode K1)
 {
     AVLNode K2;
-
     K2 = K1->Right;
     K1->Right = K2->Left;
     K2->Left = K1;
@@ -479,9 +472,11 @@ AVLNode Insert(char *Word, AVLNode T)
     if (T == NULL)
     {
         T = malloc(sizeof(struct AVLnode));
+
         if (T == NULL)
         {
-            printf("Out of space!");
+            printf("Out of space");
+            exit(1);
         }
         else
         {
@@ -534,7 +529,6 @@ AVLNode Delete(char *Word, AVLNode T)
 {
     if (T == NULL)
     {
-
         printf("\nThe word you entered not found\n\n");
         return NULL;
     }
@@ -542,7 +536,6 @@ AVLNode Delete(char *Word, AVLNode T)
     if (strcasecmp(Word, T->Word) < 0)
     {
         T->Left = Delete(Word, T->Left);
-
         if (Height(T->Left) - Height(T->Right) == 2)
         {
             if (strcasecmp(Word, T->Left->Word) < 0)
@@ -558,7 +551,6 @@ AVLNode Delete(char *Word, AVLNode T)
     else if (strcasecmp(Word, T->Word) > 0)
     {
         T->Right = Delete(Word, T->Right);
-
         if (Height(T->Right) - Height(T->Left) == 2)
         {
             if (strcasecmp(Word, T->Right->Word) > 0)
@@ -576,8 +568,6 @@ AVLNode Delete(char *Word, AVLNode T)
         AVLNode temp;
         if (T->Left && T->Right)
         {
-            // Two children
-            // Replace with smallest in right subtree
             temp = FindMin(T->Right);
             strcpy(T->Word, temp->Word);
             T->Frequency = temp->Frequency;
@@ -597,7 +587,6 @@ AVLNode Delete(char *Word, AVLNode T)
         }
         else
         {
-            // One or zero children
             temp = T;
             if (T->Left == NULL)
             {
@@ -626,19 +615,16 @@ void PrintInOrder(AVLNode T)
     if (T != NULL)
     {
         PrintInOrder(T->Left);
-        printf(" - Word: %s - Frequency: %d\n", T->Word, T->Frequency);
+        printf(" - Word: %s | Frequency: %d\n", T->Word, T->Frequency);
         PrintInOrder(T->Right);
     }
 }
 
-//==========================================================[Hash Tables Methods]=========================================================
-
 void hashInitialize(hashTableP hashTable, int TableSize)
 {
-
     for (int i = 0; i < TableSize; i++)
     {
-        hashTable[i].status = 0;
+        hashTable[i].Status = 0;
     }
 }
 
@@ -656,18 +642,17 @@ int hashFunction(char *Word, int TableSize)
 
 void hashInsert(hashTableP hashTable, char *Word, int TableSize)
 {
-
     int firstCaseIndex = hashFunction(Word, TableSize);
     int index = firstCaseIndex;
     int i = 1;
 
     if (currentTableSize == TableSize)
     {
-        printf("\nHash Table is full!\n\n");
+        printf("Hash Table is full!\n\n");
         return;
     }
 
-    while (hashTable[index].status == 1)
+    while (hashTable[index].Status == 1)
     {
         if (strcasecmp(hashTable[index].Word, Word) == 0)
         {
@@ -680,13 +665,12 @@ void hashInsert(hashTableP hashTable, char *Word, int TableSize)
         if (index == firstCaseIndex)
         {
             printf("\nHash Table is full!!\n\n");
-            return;
         }
 
         i++;
     }
 
-    hashTable[index].status = 1;
+    hashTable[index].Status = 1;
     strcpy(hashTable[index].Word, Word);
     hashTable[index].Frequency = 1;
     currentTableSize++;
@@ -698,11 +682,11 @@ void hashDisplay(hashTableP hashTable, int TableSize)
 {
     for (int i = 0; i < TableSize; i++)
     {
-        if (hashTable[i].status == 1)
+        if (hashTable[i].Status == 1)
         {
             printf("%d. Word = %s | Frequency = %d\n", i, hashTable[i].Word, hashTable[i].Frequency);
         }
-        else if (hashTable[i].status == -1)
+        else if (hashTable[i].Status == -1)
         {
             printf("%d. Deleted\n", i);
         }
@@ -715,7 +699,6 @@ void hashDisplay(hashTableP hashTable, int TableSize)
 
 int hashSearch(hashTableP hashTable, char *Word, int TableSize)
 {
-
     int firstCaseIndex = hashFunction(Word, TableSize);
     int index = firstCaseIndex;
     int i = 1;
@@ -725,9 +708,9 @@ int hashSearch(hashTableP hashTable, char *Word, int TableSize)
         return -1;
     }
 
-    while (hashTable[index].status != 0)
+    while (hashTable[index].Status != 0)
     {
-        if (strcasecmp(hashTable[index].Word, Word) == 0 && hashTable[index].status == 1)
+        if (strcasecmp(hashTable[index].Word, Word) == 0 && hashTable[index].Status == 1)
         {
             return index;
         }
@@ -747,7 +730,6 @@ int hashSearch(hashTableP hashTable, char *Word, int TableSize)
 
 void hashDelete(hashTableP hashTable, char *Word, int TableSize)
 {
-
     int index = hashSearch(hashTable, Word, TableSize);
     if (index == -1)
     {
@@ -755,12 +737,11 @@ void hashDelete(hashTableP hashTable, char *Word, int TableSize)
     }
     else if (index == -2)
     {
-        printf("\nThe word you entered not found!\n\n");
+        printf("\nThe word you entered not found\n\n");
     }
     else
     {
-
-        hashTable[index].status = -1;
+        hashTable[index].Status = -1;
         currentTableSize--;
         printf("\nThe word has been deleted successfully\n\n");
     }
@@ -768,7 +749,6 @@ void hashDelete(hashTableP hashTable, char *Word, int TableSize)
 
 void hashInsertWithFrequency(hashTableP hashTable, char *Word, int Frequency, int TableSize)
 {
-
     int firstCaseIndex = hashFunction(Word, TableSize);
     int index = firstCaseIndex;
     int i = 1;
@@ -776,10 +756,9 @@ void hashInsertWithFrequency(hashTableP hashTable, char *Word, int Frequency, in
     if (currentTableSize == TableSize)
     {
         printf("\nHash Table is full!\n\n");
-        return;
     }
 
-    while (hashTable[index].status == 1)
+    while (hashTable[index].Status == 1)
     {
         if (strcasecmp(hashTable[index].Word, Word) == 0)
         {
@@ -798,7 +777,7 @@ void hashInsertWithFrequency(hashTableP hashTable, char *Word, int Frequency, in
         i++;
     }
 
-    hashTable[index].status = 1;
+    hashTable[index].Status = 1;
     strcpy(hashTable[index].Word, Word);
     hashTable[index].Frequency = Frequency;
     currentTableSize++;
@@ -816,27 +795,28 @@ void insertInOrder(AVLNode T, hashTableP hashTable, int TableSize)
 
 void displayStatistics(hashTableP hashTable, int TableSize)
 {
-    int uniqueWords = 0;
-    char mostFrequent[50];
+    int uniqueWordCount = 0;
+    char mostFrequentWord[50];
     int mostFrequency = 0;
-    int threshold;
     int counter = 0;
-    printf("Please enter the threshold: ");
+
+    int threshold;
+    printf("Please Enter the threshold: ");
     int isInteger = scanf("%d", &threshold);
 
     if (isInteger == 1)
     {
-        printf("\nThe words that repeated more than the threshold\n");
+        printf("\nThe Words that repeated more that the threshold\n");
 
         for (int i = 0; i < TableSize; i++)
         {
-            if (hashTable[i].status == 1)
+            if (hashTable[i].Status == 1)
             {
-                uniqueWords++;
+                uniqueWordCount++;
                 if (hashTable[i].Frequency > mostFrequency)
                 {
                     mostFrequency = hashTable[i].Frequency;
-                    strcpy(mostFrequent, hashTable[i].Word);
+                    strcpy(mostFrequentWord, hashTable[i].Word);
                 }
                 if (hashTable[i].Frequency > threshold)
                 {
@@ -851,8 +831,8 @@ void displayStatistics(hashTableP hashTable, int TableSize)
             printf(" - No Words\n");
         }
 
-        printf("\nThe total number of unique words: %d\n", uniqueWords);
-        printf("Most frequent (Word: %s | Frequency: %d)\n\n", mostFrequent, mostFrequency);
+        printf("\nThe Total number of unique words: %d\n", uniqueWordCount);
+        printf("Most frequent (Word: %s | Frequency: %d)\n\n", mostFrequentWord, mostFrequency);
     }
     else
     {
